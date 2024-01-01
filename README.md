@@ -1,5 +1,5 @@
 
-# NOTE: READ CAREFULLY BEFORE STARTING THE PROJECT
+# NOTE: READ CAREFULLY BEFORE STARTING THE PROJECT.Postman Collection is also attached in the project.
 ## Description
 
 This is a backend exercise that uses Node.js and Express.js to create a server that serves JSON as a response to a REST API calls. These problems cover various aspects of Node.js development, including asynchronous programming, error handling, file system operations, database interactions, and authentication.

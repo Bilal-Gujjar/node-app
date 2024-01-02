@@ -121,7 +121,7 @@ In Postman body raw json
 
 ## Params: 
 ```bash
-http://localhost:8000/api/listFiles?dirPath=./fileTest&extension=pdf
+/api/listFiles?dirPath=./fileTest&extension=pdf
 ```
 
 ### Error Handling

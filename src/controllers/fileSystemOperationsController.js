@@ -1,11 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-/**
- * Handles file system operations for the '/listFiles' route.
- * @param {Object} req - The HTTP request object.
- * @param {Object} res - The HTTP response object.
- */
 async function fileSystemOperations(req, res) {
     const { dirPath, extension } = req.query;
     
@@ -20,12 +15,6 @@ async function fileSystemOperations(req, res) {
         res.status(500).json({ message: 'Failed to list files', error: error.message });
     }
 
-    /**
-     * Lists all files with a specific extension in a directory.
-     * @param {string} dirPath - The path to the directory to read.
-     * @param {string} extension - The file extension to filter by.
-     * @returns {Promise<string[]>} A promise that resolves with the list of files.
-     */
     async function listFilesWithExtension(dirPath, extension) {
         try {
             const files = await fs.promises.readdir(dirPath);

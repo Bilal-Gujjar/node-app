@@ -1,4 +1,4 @@
-name: Test SSH Connection
+name: Deploy to EC2
 
 on:
   push:
@@ -6,23 +6,60 @@ on:
       - main
 
 jobs:
-  test-ssh:
+  deploy:
     runs-on: ubuntu-latest
-
-    environment: AWS EC2 CI/CD
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Add SSH key
-      uses: webfactory/ssh-agent@v0.5.3
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
       with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+        node-version: '18'
 
-    - name: Test SSH Connection
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Deploy to EC2
       env:
-        EC2_USER: ${{ secrets.EC2_USER }}
-        EC2_HOST: ${{ secrets.EC2_HOST }}
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+        PORT: ${{ secrets.EC2_PORT }}
+        PORT: ${{ secrets.PORT }}
+        MONGO_URL: ${{ secrets.MONGO_URL }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: |
-        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "echo 'SSH Connection Successful'"
+        echo "${PRIVATE_KEY}" > private_key.pem
+        chmod 600 private_key.pem
+        scp -o StrictHostKeyChecking=no -i private_key.pem -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          sudo apt update
+          sudo apt install -y nodejs npm
+          sudo npm install -g pm2
+
+          # Navigate to your application directory
+          cd ~/app
+
+          # Install dependencies
+          npm install
+
+          # Start the application with PM2
+          pm2 start app.js --name my-app
+
+          # Set PM2 to start on boot
+          pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }}
+          pm2 save
+
+          # Create .env file
+          echo "PORT=${{ secrets.PORT }}" > .env
+          echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+
+          # Restart PM2 to apply the new environment variables
+          pm2 restart my-app
+        EOF

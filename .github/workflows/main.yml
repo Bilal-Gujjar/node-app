@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies
       run: npm install
-      
+
     - name: Debug - Print environment variables
       run: |
         echo "HOST: ${{ secrets.EC2_HOST }}"

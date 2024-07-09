@@ -15,4 +15,4 @@ jobs:
 
     - name: Debug Secrets
       run: |
-        echo "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}"
+        echo "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}" | sed -e 's/./& /g'

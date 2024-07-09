@@ -16,7 +16,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18'  # or the version your application needs
+        node-version: '14'  # or the version your application needs
 
     - name: Install dependencies
       run: npm install
@@ -55,5 +55,4 @@ jobs:
 
           # Start the application using pm2
           pm2 start app.js --name iks --watch --no-daemon --env production
-
         EOF

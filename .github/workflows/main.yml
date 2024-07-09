@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18'
+        node-version: '14'
 
     - name: Install dependencies
       run: npm install
@@ -30,7 +30,6 @@ jobs:
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
         PORT: ${{ secrets.EC2_PORT }}
-        PORT: ${{ secrets.PORT }}
         MONGO_URL: ${{ secrets.MONGO_URL }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: |
@@ -48,17 +47,17 @@ jobs:
           # Install dependencies
           npm install
 
+          # Create .env file
+          echo "PORT=${{ secrets.PORT }}" > .env
+          echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+
           # Start the application with PM2
           pm2 start app.js --name my-app
 
           # Set PM2 to start on boot
           pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }}
           pm2 save
-
-          # Create .env file
-          echo "PORT=${{ secrets.PORT }}" > .env
-          echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
 
           # Restart PM2 to apply the new environment variables
           pm2 restart my-app

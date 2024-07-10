@@ -1,9 +1,28 @@
-- name: Test SSH connection
+- name: Debug SSH connection
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
       run: |
+        echo "Host is set to: $HOST"
+        echo "User is set to: $USER"
+        echo "Private key length: ${#PRIVATE_KEY}"
+        if [ -z "$PRIVATE_KEY" ]; then
+          echo "Private key is empty"
+        else
+          echo "Private key is not empty"
+        fi
+
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        if [ -z "$PRIVATE_KEY" ] || [ -z "$HOST" ] || [ -z "$USER" ]; then
+          echo "One or more required secrets are empty"
+          exit 1
+        fi
         echo "$PRIVATE_KEY" > private_key
         chmod 600 private_key
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} 'echo "SSH connection successful"'

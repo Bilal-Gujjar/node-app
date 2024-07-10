@@ -63,6 +63,10 @@ jobs:
         USER: ubuntu
       run: |
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} << 'EOF'
+          # Add host to known hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
+          
           # Create directory if it does not exist
           mkdir -p /home/ubuntu/backend-deployment
           
@@ -105,7 +109,7 @@ jobs:
               echo "No package.json found, skipping npm install"
           fi
           
-          # Restart the application using pm2
+          # Restart or start the application using pm2
           if pm2 list | grep -q app.js; then
               pm2 restart app.js
           else

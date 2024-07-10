@@ -63,10 +63,6 @@ jobs:
         USER: ubuntu
       run: |
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} << 'EOF'
-          # Add host to known hosts
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
-          
           # Create directory if it does not exist
           mkdir -p /home/ubuntu/backend-deployment
           
@@ -95,26 +91,13 @@ jobs:
           # Initialize the repository if it's not a git repository
           if [ ! -d .git ]; then
               git init
-              git remote add origin git@github.com:Bilal-Gujjar/node-app.git
+              git remote add origin git@github.com:yourusername/yourrepository.git
               git fetch
           fi
 
-          # Pull the latest changes from the main branch
           git pull origin main
-          
-          # Check if package.json exists before installing npm packages
-          if [ -f package.json ]; then
-              npm install
-          else
-              echo "No package.json found, skipping npm install"
-          fi
-          
-          # Restart or start the application using pm2
-          if pm2 list | grep -q app.js; then
-              pm2 restart app.js
-          else
-              pm2 start app.js
-          fi
+          npm install
+          pm2 restart app.js
         EOF
       shell: bash
 

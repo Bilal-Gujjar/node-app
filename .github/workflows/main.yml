@@ -63,6 +63,10 @@ jobs:
         USER: ubuntu
       run: |
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} << 'EOF'
+          # Install Nginx
+          sudo apt-get update
+          sudo apt-get install -y nginx
+          
           # Create directory if it does not exist
           mkdir -p /home/ubuntu/backend-deployment
           
@@ -91,7 +95,7 @@ jobs:
           # Initialize the repository if it's not a git repository
           if [ ! -d .git ]; then
               git init
-              git remote add origin git@github.com:yourusername/yourrepository.git
+              git remote add origin git@github.com:Bilal-Gujjar/node-app.git
               git fetch
           fi
 

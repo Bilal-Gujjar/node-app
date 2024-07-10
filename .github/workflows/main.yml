@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]  # Trigger the action on push to main branch
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -14,18 +14,34 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18'  # Using a more recent Node.js version
+        node-version: '18'
 
     - name: Install dependencies
       run: npm ci
 
+    - name: Debug SSH connection
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "Host is set to: $HOST"
+        echo "User is set to: $USER"
+        echo "Private key length: ${#PRIVATE_KEY}"
+        if [ -z "$PRIVATE_KEY" ]; then
+          echo "Private key is empty"
+        else
+          echo "Private key is not empty"
+        fi
+        
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
       run: |
-        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        echo "$PRIVATE_KEY" > private_key
+        chmod 600 private_key
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/backend-deployment &&
           git pull origin main &&

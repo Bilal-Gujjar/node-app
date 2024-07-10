@@ -8,6 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    environment: AWS EC2 CI/CD  # Reference the environment here
+
     steps:
     - uses: actions/checkout@v2
 

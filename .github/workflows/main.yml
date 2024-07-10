@@ -26,6 +26,7 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
+        PUBLIC_KEY: ${{ secrets.EC2_PUBLIC_KEY }}
       run: |
         echo "Host is set to: $HOST"
         echo "User is set to: $USER"
@@ -36,21 +37,33 @@ jobs:
         else
           echo "Private key is not empty"
         fi
-
-    - name: Prepare SSH key
-      env:
-        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-      run: |
         echo "$PRIVATE_KEY" | tr -d '\r' > private_key
         chmod 600 private_key
         echo "Private key contents:"
         cat private_key
         echo "End of private key contents."
 
+    - name: Add Public Key for ubuntu User
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        PUBLIC_KEY: ${{ secrets.EC2_PUBLIC_KEY }}
+      run: |
+        ssh -o StrictHostKeyChecking=no -i private_key root@${HOST} << 'EOF'
+          su - ubuntu -c "
+          mkdir -p ~/.ssh
+          echo '${PUBLIC_KEY}' >> ~/.ssh/authorized_keys
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/authorized_keys
+          "
+        EOF
+      shell: bash
+
     - name: Test SSH connection
       env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
-        USER: ${{ secrets.EC2_USER }}
+        USER: ubuntu
       run: |
         echo "Testing SSH connection to $USER@$HOST"
         ssh -vvv -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} echo "SSH connection successful"
@@ -59,8 +72,9 @@ jobs:
     - name: Deploy to EC2
       if: success()  # Ensure deployment step only runs if the SSH connection test is successful
       env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
-        USER: ${{ secrets.EC2_USER }}
+        USER: ubuntu
       run: |
         echo "Deploying to $USER@$HOST"
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} << 'EOF'

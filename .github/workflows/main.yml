@@ -2,66 +2,33 @@ name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]  # Trigger the action on push to main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '14'
+        node-version: '18'  # Using a more recent Node.js version
 
     - name: Install dependencies
-      run: npm install
-
-    - name: Debug - Print environment variables
-      run: |
-        echo "HOST: ${{ secrets.EC2_HOST }}"
-        echo "USER: ${{ secrets.EC2_USER }}"
-        echo "PORT: ${{ secrets.EC2_PORT }}"
+      run: npm ci
 
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
-        PORT: ${{ secrets.EC2_PORT }}
-        MONGO_URL: ${{ secrets.MONGO_URL }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: |
-        echo "${PRIVATE_KEY}" > private_key.pem
-        chmod 600 private_key.pem
-        scp -o StrictHostKeyChecking=no -i private_key.pem -P ${PORT} -r . ${{ secrets.EC2_USER }}@${HOST}:~/app
-        ssh -o StrictHostKeyChecking=no -i private_key.pem -p ${PORT} ${{ secrets.EC2_USER }}@${HOST} << 'EOF'
-          sudo apt update
-          sudo apt install -y nodejs npm
-          sudo npm install -g pm2
-
-          # Navigate to your application directory
-          cd ~/app
-
-          # Install dependencies
-          npm install
-
-          # Create .env file
-          echo "PORT=${{ secrets.PORT }}" > .env
-          echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-
-          # Start the application with PM2
-          pm2 start app.js --name my-app
-
-          # Set PM2 to start on boot
-          pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }}
-          pm2 save
-
-          # Restart PM2 to apply the new environment variables
-          pm2 restart my-app
-        EOF
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+          cd /home/ubuntu/backend-deployment &&
+          git pull origin main &&
+          npm install &&
+          pm2 restart app.js
+        '

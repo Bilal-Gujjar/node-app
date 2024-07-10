@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    environment: AWS EC2 CI/CD  # Reference the environment here
+    environment: AWS EC2 CI/CD
 
     steps:
     - uses: actions/checkout@v2
@@ -46,6 +46,15 @@ jobs:
         echo "Private key contents:"
         head -n 5 private_key
         echo "End of private key contents."
+
+    - name: Test SSH connection
+      env:
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "Testing SSH connection to $USER@$HOST"
+        ssh -vvv -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} echo "SSH connection successful"
+      shell: bash
 
     - name: Deploy to EC2
       env:

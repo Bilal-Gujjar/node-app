@@ -56,16 +56,45 @@ jobs:
         ssh -vvv -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} echo "SSH connection successful"
       shell: bash
 
-    - name: Deploy to EC2
-      if: success()  # Ensure deployment step only runs if the SSH connection test is successful
+    - name: Setup Environment and Deploy
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ubuntu
       run: |
-        echo "Deploying to $USER@$HOST"
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} << 'EOF'
+          # Create directory if it does not exist
+          mkdir -p /home/ubuntu/backend-deployment
+          
+          # Check if git is installed
+          if ! command -v git &> /dev/null
+          then
+              sudo apt-get update
+              sudo apt-get install -y git
+          fi
+          
+          # Check if node is installed
+          if ! command -v npm &> /dev/null
+          then
+              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+          fi
+          
+          # Check if pm2 is installed
+          if ! command -v pm2 &> /dev/null
+          then
+              sudo npm install -g pm2
+          fi
+
           cd /home/ubuntu/backend-deployment
+
+          # Initialize the repository if it's not a git repository
+          if [ ! -d .git ]; then
+              git init
+              git remote add origin git@github.com:Bilal-Gujjar/node-app.git
+              git fetch
+          fi
+
           git pull origin main
           npm install
           pm2 restart app.js

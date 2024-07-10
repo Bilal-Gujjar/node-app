@@ -33,7 +33,7 @@ jobs:
         else
           echo "Private key is not empty"
         fi
-        
+
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
@@ -48,3 +48,7 @@ jobs:
           npm install &&
           pm2 restart app.js
         '
+      shell: bash
+
+    - name: Clean up
+      run: rm -f private_key

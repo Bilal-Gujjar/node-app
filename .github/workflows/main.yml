@@ -57,6 +57,7 @@ jobs:
       shell: bash
 
     - name: Deploy to EC2
+      if: success()  # Ensure deployment step only runs if the SSH connection test is successful
       env:
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}

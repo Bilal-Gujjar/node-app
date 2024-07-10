@@ -21,41 +21,30 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Debug SSH connection
+    - name: Prepare SSH key and public key
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-        HOST: ${{ secrets.EC2_HOST }}
-        USER: ${{ secrets.EC2_USER }}
-        PUBLIC_KEY: ${{ secrets.EC2_PUBLIC_KEY }}
       run: |
-        echo "Host is set to: $HOST"
-        echo "User is set to: $USER"
-        echo "Private key length: ${#PRIVATE_KEY}"
-        if [ -z "$PRIVATE_KEY" ]; then
-          echo "Private key is empty"
-          exit 1
-        else
-          echo "Private key is not empty"
-        fi
         echo "$PRIVATE_KEY" | tr -d '\r' > private_key
         chmod 600 private_key
+        ssh-keygen -y -f private_key > public_key
         echo "Private key contents:"
         cat private_key
-        echo "End of private key contents."
+        echo "Public key contents:"
+        cat public_key
 
     - name: Add Public Key for ubuntu User
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
-        PUBLIC_KEY: ${{ secrets.EC2_PUBLIC_KEY }}
       run: |
         ssh -o StrictHostKeyChecking=no -i private_key root@${HOST} << 'EOF'
           su - ubuntu -c "
           mkdir -p ~/.ssh
-          echo '${PUBLIC_KEY}' >> ~/.ssh/authorized_keys
+          cat >> ~/.ssh/authorized_keys
           chmod 700 ~/.ssh
           chmod 600 ~/.ssh/authorized_keys
-          "
+          " < public_key
         EOF
       shell: bash
 
@@ -86,4 +75,4 @@ jobs:
       shell: bash
 
     - name: Clean up
-      run: rm -f private_key
+      run: rm -f private_key public_key

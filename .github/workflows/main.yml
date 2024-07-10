@@ -19,43 +19,28 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Debug SSH connection
+    - name: Debug SSH connection (optional)
       env:
-        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}  # Reference from Secrets Manager
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
       run: |
         echo "Host is set to: $HOST"
         echo "User is set to: $USER"
-        echo "Private key length: ${#PRIVATE_KEY}"
-        if [ -z "$PRIVATE_KEY" ]; then
-          echo "Private key is empty"
-        else
-          echo "Private key is not empty"
-        fi
-
-    - name: Prepare SSH key
-      env:
-        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-      run: |
-        echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > private_key
-        chmod 600 private_key
-        echo "Private key contents:"
-        cat private_key
-        echo "End of private key contents."
+        # Optional: Verify private key presence and format (replace with your preferred command)
+        # openssl rsa -in ${{ secrets.EC2_PRIVATE_KEY }} -check
 
     - name: Deploy to EC2
       env:
-        HOST: ${{ secrets.EC2_HOST }}
-        USER: ${{ secrets.EC2_USER }}
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
       run: |
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        # Use AWS CLI or another tool to retrieve the private key content securely
+        PRIVATE_KEY_CONTENT=$(aws secretsmanager get-secret-value --secret-id "ec2-private-key" --query SecretString --output text)
+        echo "$PRIVATE_KEY_CONTENT" > private_key
+        chmod 600 private_key
+        ssh -o StrictHostKeyChecking=ask -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/backend-deployment &&
           git pull origin main &&
           npm install &&
           pm2 restart app.js
         '
-      shell: bash
-
-    - name: Clean up
-      run: rm -f private_key

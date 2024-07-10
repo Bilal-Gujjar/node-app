@@ -30,6 +30,7 @@ jobs:
         echo "Private key length: ${#PRIVATE_KEY}"
         if [ -z "$PRIVATE_KEY" ]; then
           echo "Private key is empty"
+          exit 1
         else
           echo "Private key is not empty"
         fi
@@ -40,6 +41,9 @@ jobs:
       run: |
         echo "$PRIVATE_KEY" | tr -d '\r' > private_key
         chmod 600 private_key
+        echo "Private key contents:"
+        head -n 5 private_key
+        echo "End of private key contents."
 
     - name: Deploy to EC2
       env:
